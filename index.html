@@ -29,7 +29,7 @@
 
     /* Splash de carga */
     #splash {
-      position: fixed; inset: 0; background: #1a3a6b;
+      position: fixed; inset: 0; background: #1a3a6b; z-index:9999;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; z-index: 9999;
       transition: opacity 0.4s ease;
@@ -142,7 +142,7 @@
 <!-- React + Babel -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" onerror="document.getElementById('root').innerHTML='<div style=padding:40px;font-family:sans-serif;color:#c0392b>Error al cargar la app. Verificá tu conexión a internet e intentá de nuevo.</div>'"></script>
 
 <script type="text/babel" data-presets="react">
 /* ─── DATA ──────────────────────────────────────────────────────────────── */
@@ -877,12 +877,17 @@ window.addEventListener("appinstalled", () => {
 });
 
 // ── Ocultar splash ───────────────────────────────────────────────────────────
+// Ocultar splash tras 2.5s sin importar si los scripts terminaron
+setTimeout(() => {
+  const splash = document.getElementById("splash");
+  if (splash) { splash.classList.add("hidden"); setTimeout(() => { if(splash.parentNode) splash.remove(); }, 500); }
+}, 2500);
+// Fallback: si carga antes, ocultarlo al cargar
 window.addEventListener("load", () => {
   setTimeout(() => {
     const splash = document.getElementById("splash");
-    splash.classList.add("hidden");
-    setTimeout(() => splash.remove(), 500);
-  }, 1200);
+    if (splash) { splash.classList.add("hidden"); setTimeout(() => { if(splash.parentNode) splash.remove(); }, 500); }
+  }, 800);
 });
 </script>
 </body>
