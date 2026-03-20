@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a3a6b"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="ARQUEO CFD"/>
+  <meta name="description" content="Arqueo de caja en moneda boliviana para distribuidores"/>
+  <meta name="application-name" content="ARQUEO CFD"/>
+
+  <title>CFDistribucion S.R.L. — Arqueo de Caja</title>
+
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png"/>
+  <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png"/>
+
+  <!-- Splash screens iOS -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0f1117; }
+    #root { height: 100%; }
+
+    /* Splash de carga */
+    #splash {
+      position: fixed; inset: 0; background: #1a3a6b;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    .splash-hex {
+      font-size: 64px; margin-bottom: 20px;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .splash-title {
+      font-family: sans-serif; font-weight: 900; font-size: 22px;
+      letter-spacing: 3px; text-transform: uppercase; color: #ffffff;
+    }
+    .splash-sub {
+      font-family: sans-serif; font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase; color: rgba(255,255,255,0.65); margin-top: 8px;
+    }
+    .splash-dots { display: flex; gap: 8px; margin-top: 32px; }
+    .splash-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #ffffff;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+    .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:.4} 40%{transform:translateY(-8px);opacity:1} }
+
+    /* Banner instalacion */
+    #install-banner {
+      position: fixed; bottom: 96px; left: 12px; right: 12px;
+      background: #ffffff; border: 1.5px solid #1a3a6b;
+      border-radius: 12px; padding: 14px 16px;
+      display: none; align-items: center; gap: 12px;
+      z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #install-banner.show { display: flex; }
+    #install-banner-text { flex: 1; }
+    #install-banner-title {
+      font-family: sans-serif; font-weight: 700; font-size: 13px;
+      color: #e8e4dc; letter-spacing: 0.5px;
+    }
+    #install-banner-sub {
+      font-family: sans-serif; font-size: 11px; color: #8890a8; margin-top: 2px;
+    }
+    #install-btn {
+      background: #1a3a6b; color: #ffffff; border: none;
+      border-radius: 8px; padding: 8px 16px; cursor: pointer;
+      font-family: sans-serif; font-weight: 800; font-size: 12px;
+      letter-spacing: 1px; white-space: nowrap;
+    }
+    #install-dismiss {
+      background: none; border: none; color: #8890a8;
+      cursor: pointer; font-size: 18px; padding: 0 4px;
+    }
+
+    /* Banner actualización */
+    #update-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #1a3a6b; color: #ffffff;
+      padding: 10px 16px; text-align: center;
+      display: none; align-items: center; justify-content: center; gap: 12px;
+      z-index: 600; font-family: sans-serif; font-size: 13px; font-weight: 700;
+    }
+    #update-banner.show { display: flex; }
+    #update-btn {
+      background: #ffffff; color: #1a3a6b; border: none;
+      border-radius: 6px; padding: 4px 12px; cursor: pointer;
+      font-weight: 800; font-size: 12px;
+    }
+
+    /* Safe area iOS */
+    .app { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+    .resumen-bar { padding-bottom: calc(9px + env(safe-area-inset-bottom)); }
+  </style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-hex">⬡</div>
+  <div class="splash-title">CFDistribucion S.R.L.</div>
+  <div class="splash-sub">Arqueo de Caja · Bolivia</div>
+  <div class="splash-dots">
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+  </div>
+</div>
+
+<!-- Banner instalacion -->
+<div id="install-banner">
+  <div style="font-size:28px">📲</div>
+  <div id="install-banner-text">
+    <div id="install-banner-title">Instalar CFDistribucion</div>
+    <div id="install-banner-sub">Agrega la app a tu pantalla de inicio</div>
+  </div>
+  <button id="install-btn">INSTALAR</button>
+  <button id="install-dismiss">✕</button>
+</div>
+
+<!-- Banner actualizacion -->
+<div id="update-banner">
+  <span>⬆ Nueva version disponible</span>
+  <button id="update-btn">ACTUALIZAR</button>
+</div>
+
+<!-- App -->
+<div id="root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+/* ─── DATA ──────────────────────────────────────────────────────────────── */
+const BILLETES = [
+  { valor: 200, label: "Bs. 200", color: "#1a6b3a" },
+  { valor: 100, label: "Bs. 100", color: "#7b2a8e" },
+  { valor: 50,  label: "Bs. 50",  color: "#c0392b" },
+  { valor: 20,  label: "Bs. 20",  color: "#e67e22" },
+  { valor: 10,  label: "Bs. 10",  color: "#2980b9" },
+];
+const MONEDAS = [
+  { valor: 5,   label: "Bs. 5",   color: "#b8860b" },
+  { valor: 2,   label: "Bs. 2",   color: "#8b7355" },
+  { valor: 1,   label: "Bs. 1",   color: "#9e9e9e" },
+  { valor: 0.5, label: "50 Cts.", color: "#cd7f32" },
+  { valor: 0.2, label: "20 Cts.", color: "#b5a642" },
+  { valor: 0.1, label: "10 Cts.", color: "#c0a060" },
+];
+const CATEGORIAS_GASTO = [
+  "Combustible","Peaje","Parqueo","Alimentacion",
+  "Mantenimiento","Papeleria","Comunicacion","Otro",
+];
+
+const fmt  = (n) => n.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const todayStr = () => new Date().toLocaleDateString("es-BO", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/* ─── STYLES ─────────────────────────────────────────────────────────────── */
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#ffffff;color:#1a1a2e;font-family:'DM Sans',sans-serif;min-height:100vh;overscroll-behavior:none;}
+:root{
+  --gold:#1a3a6b;--gold-dim:#2d5fa6;--ink:#ffffff;
+  --surface:#f4f6fa;--surface2:#eaecf3;--border:#d0d6e8;
+  --text:#1a1a2e;--muted:#6b7a99;
+  --green:#1a7a3c;--red:#c0392b;--blue:#1a3a6b;--orange:#b85c00;
+}
+.app{max-width:860px;margin:0 auto;padding:0 0 90px;}
+.header{background:linear-gradient(135deg,#1a3a6b 0%,#243f78 100%);border-bottom:2px solid var(--gold);padding:20px 18px 14px;position:sticky;top:0;z-index:100;}
+.header-inner{display:flex;justify-content:space-between;align-items:flex-end;}
+.header-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#ffffff;}
+.header-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-top:2px;}
+.header-date{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.65);text-align:right;}
+.header-total{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;color:#ffffff;text-align:right;}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;background:#f0f3fa;border-bottom:1px solid #c8d0e8;}
+.tab{padding:9px 3px;text-align:center;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:none;background:none;border-bottom:3px solid transparent;transition:all 0.2s;}
+.tab.active{color:#1a3a6b;border-bottom-color:#1a3a6b;background:rgba(26,58,107,0.06);}
+.tab-icon{font-size:15px;display:block;margin-bottom:2px;}
+.section{padding:18px 16px;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#2d5fa6;margin-bottom:13px;padding-bottom:6px;border-bottom:2px solid #c8d0e8;}
+.denom-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:22px;}
+.denom-row{display:grid;grid-template-columns:88px 1fr 90px;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;transition:border-color 0.2s;}
+.denom-row:focus-within{border-color:var(--gold);}
+.denom-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:1px;display:flex;align-items:center;gap:7px;}
+.denom-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.qty-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;text-align:center;padding:7px 4px;width:100%;outline:none;transition:border-color 0.2s;-moz-appearance:textfield;}
+.qty-input::-webkit-inner-spin-button,.qty-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.qty-input:focus{border-color:var(--gold);background:#2a2d3e;}
+.denom-subtotal{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;text-align:right;color:var(--muted);}
+.denom-subtotal.active{color:var(--text);}
+.totals-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.totals-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.totals-row:last-child{border-bottom:none;}
+.totals-row.grand{background:rgba(240,180,41,0.08);padding:14px;}
+.totals-label{color:var(--muted);}
+.totals-value{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;}
+.totals-value.grand-val{font-size:25px;color:#1a3a6b;}
+.field-group{display:flex;flex-direction:column;gap:4px;}
+.field-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.field-input,.field-select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 10px;outline:none;width:100%;transition:border-color 0.2s;}
+.field-input:focus,.field-select:focus{border-color:var(--gold);}
+.field-select option{background:#1a1d2e;}
+.comp-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;}
+.comp-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.comp-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(26,58,107,0.1);color:#1a3a6b;border:1px solid rgba(26,58,107,0.25);}
+.comp-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.photo-zone{border:2px dashed var(--border);border-radius:8px;padding:13px;text-align:center;cursor:pointer;transition:all 0.2s;overflow:hidden;}
+.photo-zone:hover{border-color:var(--gold-dim);background:rgba(240,180,41,0.03);}
+.photo-zone.has-photo{border-style:solid;border-color:#2d5fa6;}
+.photo-zone img{width:100%;max-height:150px;object-fit:cover;border-radius:6px;}
+.photo-zone-placeholder{color:var(--muted);font-size:13px;}
+.photo-zone-placeholder span{font-size:24px;display:block;margin-bottom:5px;}
+.photo-input{display:none;}
+.btn-del{background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:#e74c3c;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;transition:all 0.2s;}
+.btn-del:hover{background:rgba(231,76,60,0.25);}
+.btn-add{width:100%;background:rgba(26,58,107,0.05);border:1.5px dashed rgba(26,58,107,0.35);color:#1a3a6b;border-radius:8px;padding:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;transition:all 0.2s;}
+.btn-add:hover{background:rgba(26,58,107,0.1);border-style:solid;}
+.btn-send{width:100%;background:#1a7a3c;color:#fff;border:none;border-radius:8px;padding:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;text-transform:uppercase;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;}
+.btn-send:hover{opacity:0.88;}
+.btn-send:disabled{opacity:0.38;cursor:not-allowed;}
+.btn-send.ok{background:#0f5c2e;}
+.send-ok-banner{background:rgba(26,122,60,0.12);border:1px solid rgba(26,122,60,0.4);border-radius:8px;padding:10px 14px;text-align:center;color:#1a7a3c;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;margin-top:10px;}
+.btn-pdf{width:100%;background:var(--gold);color:var(--ink);border:none;border-radius:8px;padding:16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;text-transform:uppercase;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px;}
+.btn-pdf:hover{opacity:0.88;}
+.btn-pdf:disabled{opacity:0.38;cursor:not-allowed;}
+.btn-sheets{width:100%;background:transparent;color:#2ecc71;border:2px solid #2ecc71;border-radius:8px;padding:14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;text-transform:uppercase;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;}
+.btn-sheets:hover{background:rgba(46,204,113,0.1);}
+.btn-sheets:disabled{opacity:0.38;cursor:not-allowed;}
+.sheets-url-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;}
+.sheets-url-card.configured{border-color:rgba(46,204,113,0.4);background:rgba(46,204,113,0.05);}
+.sheets-status{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:8px;padding:8px 10px;border-radius:6px;}
+.sheets-status.ok{background:rgba(46,204,113,0.1);color:#2ecc71;}
+.sheets-status.err{background:rgba(231,76,60,0.1);color:#e74c3c;}
+.sheets-status.sending{background:rgba(240,180,41,0.1);color:#f0b429;}
+.gasto-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;}
+.gasto-row{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:end;}
+.apertura-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;}
+.apertura-main-input{background:#f4f6fa;border:2px solid #c8d0e8;border-radius:10px;color:#1a3a6b;font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;text-align:center;padding:14px;width:100%;outline:none;letter-spacing:2px;transition:border-color 0.2s;-moz-appearance:textfield;}
+.apertura-main-input::-webkit-inner-spin-button,.apertura-main-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.apertura-main-input:focus{border-color:var(--gold);}
+.apertura-fields{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px;}
+.cuadre-apertura-banner{background:linear-gradient(135deg,#e8edf6 0%,#dde4f0 100%);border:1px solid #c8d0e8;border-left:4px solid #1a3a6b;border-radius:10px;padding:16px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
+.cuadre-apertura-banner-lbl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.cuadre-apertura-banner-name{font-size:14px;color:var(--text);margin-top:2px;}
+.cuadre-apertura-banner-monto-lbl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.cuadre-apertura-banner-monto{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;color:#1a3a6b;}
+.cuadre-tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px;}
+.cuadre-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cuadre-col-header{padding:10px 12px 8px;border-bottom:1px solid var(--border);}
+.cuadre-col-icon{font-size:18px;margin-bottom:4px;}
+.cuadre-col-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.cuadre-col-body{padding:12px;}
+.cuadre-col-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;line-height:1;}
+.cuadre-col-pct{font-size:11px;color:var(--muted);margin-top:4px;}
+.cuadre-col-bar-track{height:4px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden;}
+.cuadre-col-bar-fill{height:4px;border-radius:2px;transition:width 0.6s ease;}
+.cuadre-suma-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:13px;}
+.cuadre-suma-label{color:var(--muted);}
+.cuadre-suma-eq{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);letter-spacing:1px;}
+.cuadre-suma-val{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;}
+.cuadre-resultado{border-radius:12px;overflow:hidden;margin-bottom:18px;}
+.cuadre-resultado-top{padding:20px;text-align:center;}
+.cuadre-resultado-lbl{font-size:9px;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px;}
+.cuadre-resultado-diferencia{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:54px;line-height:1;}
+.cuadre-resultado-status{font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-top:6px;opacity:0.85;}
+.cuadre-resultado.exacto .cuadre-resultado-top{background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);}
+.cuadre-resultado.exacto .cuadre-resultado-lbl,.cuadre-resultado.exacto .cuadre-resultado-diferencia,.cuadre-resultado.exacto .cuadre-resultado-status{color:#2ecc71;}
+.cuadre-resultado.sobrante .cuadre-resultado-top{background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);}
+.cuadre-resultado.sobrante .cuadre-resultado-lbl,.cuadre-resultado.sobrante .cuadre-resultado-diferencia,.cuadre-resultado.sobrante .cuadre-resultado-status{color:#3498db;}
+.cuadre-resultado.faltante .cuadre-resultado-top{background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);}
+.cuadre-resultado.faltante .cuadre-resultado-lbl,.cuadre-resultado.faltante .cuadre-resultado-diferencia,.cuadre-resultado.faltante .cuadre-resultado-status{color:#e74c3c;}
+.cuadre-detalle{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cuadre-det-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.cuadre-det-row:last-child{border-bottom:none;}
+.cuadre-det-label{color:var(--muted);display:flex;align-items:center;gap:6px;}
+.cuadre-det-val{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;}
+.resumen-bar{position:fixed;bottom:0;left:0;right:0;background:#1a3a6b;border-top:2px solid var(--gold);padding:9px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;z-index:200;padding-bottom:calc(9px + env(safe-area-inset-bottom));}
+.resumen-item{text-align:center;}
+.resumen-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px;}
+.resumen-val{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;}
+.resumen-val.positive{color:var(--green);}
+.resumen-val.negative{color:var(--red);}
+.resumen-val.neutral{color:#ffffff;}
+.resumen-val.blue{color:rgba(255,255,255,0.9);}
+.resumen-val.orange{color:rgba(255,255,255,0.9);}
+@media(max-width:520px){
+  .comp-fields,.apertura-fields{grid-template-columns:1fr;}
+  .cuadre-tres{grid-template-columns:1fr;}
+  .header-logo{font-size:19px;}
+  .cuadre-resultado-diferencia{font-size:38px;}
+  .cuadre-apertura-banner{flex-direction:column;gap:10px;text-align:center;}
+}
+`;
+
+/* ─── APP ────────────────────────────────────────────────────────────────── */
+function Arqueo() {
+  const [tab, setTab] = React.useState(0);
+  const [jspdfLoaded, setJspdfLoaded] = React.useState(false);
+  const [generando, setGenerando]     = React.useState(false);
+  const [enviando,  setEnviando]       = React.useState(false);
+  const [envioOk,   setEnvioOk]        = React.useState(false);
+
+  const [apertura, setApertura] = React.useState({
+    distribuidor: "", ruta: "", fecha: todayISO(), montoInicial: "",
+  });
+  const [cantBilletes, setCantBilletes] = React.useState(
+    Object.fromEntries(BILLETES.map(b => [b.valor, ""]))
+  );
+  const [cantMonedas, setCantMonedas] = React.useState(
+    Object.fromEntries(MONEDAS.map(m => [m.valor, ""]))
+  );
+  const [comprobantes, setComprobantes] = React.useState([]);
+  const [gastos,       setGastos]       = React.useState([]);
+
+  React.useEffect(() => {
+    if (window.jspdf) { setJspdfLoaded(true); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    s.onload = () => setJspdfLoaded(true);
+    document.head.appendChild(s);
+  }, []);
+
+  // Calculos
+  const montoInicial  = parseFloat(apertura.montoInicial) || 0;
+  const totalBilletes = BILLETES.reduce((s,b)=>s+(parseFloat(cantBilletes[b.valor])||0)*b.valor,0);
+  const totalMonedas  = MONEDAS.reduce((s,m)=>s+(parseFloat(cantMonedas[m.valor])||0)*m.valor,0);
+  const totalEfectivo = totalBilletes + totalMonedas;
+  const totalTransf   = comprobantes.reduce((s,c)=>s+(parseFloat(c.monto)||0),0);
+  const totalGastos   = gastos.reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+  const totalRendido  = totalEfectivo + totalTransf + totalGastos;
+  const diferencia    = totalRendido - montoInicial;
+  const pct = (v) => montoInicial > 0 ? Math.min(100,(v/montoInicial)*100) : 0;
+  const cuadreClass = diferencia === 0 ? "exacto" : diferencia > 0 ? "sobrante" : "faltante";
+  const cuadreLabel = diferencia === 0 ? "Cuadre exacto" : diferencia > 0 ? "Sobrante" : "Faltante";
+
+  // Comprobantes
+  const SHEETS_URL = "https://script.google.com/macros/s/AKfycbx9eRqX2B3YE1xpzp4gi2hM7JqDuQGaFL88kBGfOWsE1pEdnZUNMnKW28_bUaF_1QPB6Q/exec";
+
+  const enviarArqueo = async () => {
+    if (!SHEETS_URL) {
+      alert("Para enviar a Google Sheets, pegá la URL del Apps Script en la constante SHEETS_URL del archivo index.html.");
+      return;
+    }
+    if (!apertura.distribuidor) {
+      alert("Completá el nombre del distribuidor antes de enviar.");
+      return;
+    }
+    setEnviando(true);
+    try {
+      const payload = {
+        fecha: apertura.fecha,
+        distribuidor: apertura.distribuidor,
+        montoInicial,
+        totalEfectivo,
+        totalTransferencias: totalTransf,
+        totalGastos,
+        totalRendido,
+        comprobantes: comprobantes.map(c => ({
+          tipo: c.tipo, cliente: c.cliente,
+          referencia: c.referencia, monto: c.monto
+        })),
+        gastos: gastos.map(g => ({
+          categoria: g.categoria, descripcion: g.descripcion, monto: g.monto
+        }))
+      };
+      const res = await fetch(SHEETS_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setEnvioOk(true);
+        setTimeout(() => setEnvioOk(false), 4000);
+      } else {
+        alert("Error al enviar: " + (json.error || "desconocido"));
+      }
+    } catch(err) {
+      alert("No se pudo conectar con Google Sheets. Verificá la URL del script.");
+    }
+    setEnviando(false);
+  };
+
+    const addComp  = () => setComprobantes(p=>[...p,{id:Date.now(),tipo:"QR",referencia:"",monto:"",cliente:"",foto:null}]);
+  const updComp  = (id,f,v) => setComprobantes(p=>p.map(c=>c.id===id?{...c,[f]:v}:c));
+  const delComp  = id => setComprobantes(p=>p.filter(c=>c.id!==id));
+  const fotoComp = (id,file) => {
+    if(!file) return;
+    const r=new FileReader(); r.onload=e=>updComp(id,"foto",e.target.result); r.readAsDataURL(file);
+  };
+
+  // Gastos
+  const addGasto = () => setGastos(p=>[...p,{id:Date.now(),categoria:"Combustible",descripcion:"",monto:""}]);
+  const updGasto = (id,f,v) => setGastos(p=>p.map(g=>g.id===id?{...g,[f]:v}:g));
+  const delGasto = id => setGastos(p=>p.filter(g=>g.id!==id));
+
+  // PDF
+  const generarPDF = async () => {
+    if (!window.jspdf || generando) return;
+    setGenerando(true);
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+      const W=210, mg=14; let y=0;
+      const C={gold:[240,180,41],dark:[15,17,23],gray:[136,144,168],white:[232,228,220],green:[46,204,113],red:[231,76,60],blue:[52,152,219],surf:[25,28,38],border:[46,51,72],orange:[230,126,34]};
+      const newPage=()=>{ doc.addPage(); y=mg; };
+      const checkY=(n=10)=>{ if(y+n>278) newPage(); };
+      const sT=(t)=>{ checkY(14); doc.setFillColor(...C.surf); doc.roundedRect(mg,y,W-mg*2,9,2,2,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...C.gold); doc.text(t.toUpperCase(),mg+4,y+6); y+=13; };
+      const row=(lbl,val,color=C.white)=>{ checkY(7); doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(...C.gray); doc.text(lbl,mg+4,y); doc.setFont("helvetica","bold"); doc.setTextColor(...color); doc.text(val,W-mg-4,y,{align:"right"}); y+=6.5; };
+      const div=()=>{ checkY(4); doc.setDrawColor(...C.border); doc.line(mg,y,W-mg,y); y+=4; };
+      const bigRow=(lbl,val,color=C.gold)=>{ checkY(12); doc.setFillColor(28,32,48); doc.roundedRect(mg,y,W-mg*2,11,2,2,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...C.white); doc.text(lbl,mg+5,y+7.5); doc.setTextColor(...color); doc.text(`Bs. ${fmt(val)}`,W-mg-5,y+7.5,{align:"right"}); y+=14; };
+
+      doc.setFillColor(...C.dark); doc.rect(0,0,W,40,"F"); doc.setFillColor(...C.gold); doc.rect(0,38,W,2,"F");
+      const _lb64="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";
+      try{doc.addImage("data:image/png;base64,"+_lb64,"PNG",mg,4,20,20);}catch(_e){}
+      doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.setTextColor(...C.white);
+      doc.text("CFDistribucion S.R.L.",mg+26,13);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...C.gold);
+      doc.text("ARQUEO DE CAJA",mg+26,20);
+      doc.setTextColor(...C.gray);
+      doc.text(`Generado: ${new Date().toLocaleString("es-BO")}`,mg,27);
+      if(apertura.distribuidor){ doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...C.white); doc.text(apertura.distribuidor.toUpperCase(),W-mg,14,{align:"right"}); }
+      doc.text(`Fecha: ${apertura.fecha}`,W-mg,21,{align:"right"}); y=48;
+
+      sT("1. Datos de Apertura");
+      row("Distribuidor",apertura.distribuidor||"—"); row("Fecha",apertura.fecha); div(); bigRow("Monto Asignado de Apertura",montoInicial,C.gold); y+=4;
+
+      sT("2. Efectivo Cobrado");
+      let hB=false; BILLETES.forEach(b=>{ const q=parseFloat(cantBilletes[b.valor])||0; if(q>0){row(`${b.label}`,`${q} x ${b.label} = Bs. ${fmt(q*b.valor)}`);hB=true;} }); if(!hB) row("Sin billetes","—");
+      let hM=false; MONEDAS.forEach(m=>{ const q=parseFloat(cantMonedas[m.valor])||0; if(q>0){row(`${m.label}`,`${q} x ${m.label} = Bs. ${fmt(q*m.valor)}`);hM=true;} }); if(!hM) row("Sin monedas","—");
+      div(); bigRow("Total Efectivo",totalEfectivo,C.blue); y+=4;
+
+      sT("3. Cobros por Transferencia / QR");
+      if(comprobantes.length===0){ row("Sin comprobantes","—"); }
+      else { comprobantes.forEach((c,i)=>{ checkY(20); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...C.gold); doc.text(`#${i+1}  ${c.tipo}`,mg+4,y); y+=6; row("Cliente",c.cliente||"—"); row("Referencia",c.referencia||"—"); row("Monto",`Bs. ${fmt(parseFloat(c.monto)||0)}`,C.green); y+=2; }); }
+      div(); bigRow("Total Transferencias",totalTransf,C.green); y+=4;
+
+      sT("4. Gastos del Dia");
+      if(gastos.length===0){ row("Sin gastos","—"); }
+      else { gastos.forEach((g,i)=>row(`${i+1}. ${g.categoria}${g.descripcion?" - "+g.descripcion:""}`,`Bs. ${fmt(parseFloat(g.monto)||0)}`,C.orange)); }
+      div(); bigRow("Total Gastos",totalGastos,C.orange); y+=4;
+
+      // Fotos
+      const conFoto=comprobantes.filter(c=>c.foto);
+      if(conFoto.length>0){
+        newPage(); sT("3B. Fotografias de Comprobantes");
+        for(let i=0;i<conFoto.length;i++){
+          const c=conFoto[i]; const idx=comprobantes.indexOf(c)+1; checkY(75);
+          doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...C.gold);
+          doc.text(`Comprobante #${idx} - ${c.tipo}  |  ${c.cliente||"Sin nombre"}  |  Bs. ${fmt(parseFloat(c.monto)||0)}`,mg,y); y+=5;
+          const imgFmt=c.foto.includes("data:image/jpeg")||c.foto.includes("data:image/jpg")?"JPEG":"PNG";
+          try{
+            const img=new Image(); await new Promise(res=>{img.onload=res;img.src=c.foto;});
+            const ratio=img.naturalWidth/img.naturalHeight; let iW=W-mg*2,iH=iW/ratio; if(iH>72){iH=72;iW=72*ratio;}
+            checkY(iH+10); doc.setDrawColor(...C.gold); doc.roundedRect(mg-1,y-1,iW+2,iH+2,2,2,"S");
+            doc.addImage(c.foto,imgFmt,mg,y,iW,iH); y+=iH+10;
+          }catch{ row("(Error al cargar imagen)","—"); }
+        }
+      }
+
+      // Cuadre
+      checkY(80); sT("5. Cuadre de Caja");
+      row("Monto de Apertura asignado",`Bs. ${fmt(montoInicial)}`,C.gold);
+      div();
+      row("Efectivo cobrado",`Bs. ${fmt(totalEfectivo)}`,C.blue);
+      row("Transferencias / QR",`Bs. ${fmt(totalTransf)}`,C.green);
+      row("Gastos documentados",`Bs. ${fmt(totalGastos)}`,C.orange);
+      div(); bigRow("Total Rendido  (ef. + transf. + gastos)",totalRendido); y+=2;
+      checkY(20);
+      doc.setFillColor(...C.dark); doc.rect(mg,y,W-mg*2,18,"F");
+      const dC=diferencia===0?C.green:diferencia>0?C.blue:C.red;
+      doc.setFillColor(...dC); doc.rect(mg,y,3,18,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.setTextColor(...C.white);
+      doc.text(diferencia===0?"CUADRE EXACTO":diferencia>0?"SOBRANTE":"FALTANTE",mg+8,y+11);
+      doc.setTextColor(...dC); doc.setFontSize(15);
+      doc.text(`Bs. ${fmt(Math.abs(diferencia))}`,W-mg-5,y+11,{align:"right"}); y+=24;
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...C.gray);
+      const st=diferencia===0?"El distribuidor rindio exactamente el monto asignado.":diferencia>0?`Rindio Bs. ${fmt(diferencia)} por encima del monto asignado.`:`Rindio Bs. ${fmt(Math.abs(diferencia))} por debajo del monto asignado.`;
+      doc.text(st,W/2,y,{align:"center"}); y+=14;
+      div();
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...C.gray);
+      doc.line(mg+18,y+16,mg+78,y+16); doc.text("Firma Distribuidor",mg+48,y+22,{align:"center"});
+      doc.line(W-mg-78,y+16,W-mg-18,y+16); doc.text("Firma Supervisor",W-mg-48,y+22,{align:"center"}); y+=34;
+      doc.setFontSize(7); doc.text("Documento generado automaticamente - CFDistribucion S.R.L. — Sistema de Arqueo de Caja",W/2,y,{align:"center"});
+
+      doc.save(`Arqueo_${(apertura.distribuidor||"Distribuidor").replace(/\s+/g,"_")}_${apertura.fecha}.pdf`);
+    } catch(err){ console.error(err); alert("Error al generar el PDF. Intenta de nuevo."); }
+    setGenerando(false);
+  };
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="app">
+
+        <div className="header">
+          <div className="header-inner">
+            <div>
+              <div className="header-logo"><img src="data:image/png;base64,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" style="width:32px;height:32px;border-radius:8px;margin-right:10px;vertical-align:middle;" alt="CF"/> CFDistribucion S.R.L.</div>
+              <div className="header-sub">Arqueo de Caja — Distribuidor</div>
+            </div>
+            <div>
+              <div className="header-date">{todayStr()}</div>
+              <div className="header-total">Bs. {fmt(montoInicial)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="tabs">
+          {[{icon:"🚀",label:"Apertura"},{icon:"💵",label:"Efectivo"},{icon:"📲",label:"Pagos"},{icon:"🧾",label:"Gastos"},{icon:"⚖️",label:"Cuadre"}].map((t,i)=>(
+            <button key={i} className={`tab${tab===i?" active":""}`} onClick={()=>setTab(i)}>
+              <span className="tab-icon">{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* APERTURA */}
+        {tab===0 && (
+          <div className="section">
+            <div className="section-title">Datos de Inicio del Dia</div>
+            <div className="apertura-card">
+              <div className="field-label" style={{marginBottom:9}}>Monto Asignado de Apertura (Bs.)</div>
+              <input className="apertura-main-input" type="number" min="0" step="0.01" placeholder="0.00"
+                value={apertura.montoInicial} onChange={e=>setApertura(p=>({...p,montoInicial:e.target.value}))}
+                inputMode="decimal"/>
+              <div style={{marginTop:6,textAlign:"center",color:"var(--muted)",fontSize:12}}>
+                Total de productos/cartera asignada al distribuidor
+              </div>
+              <div className="apertura-fields">
+                <div className="field-group">
+                  <label className="field-label">Nombre del Distribuidor</label>
+                  <input className="field-input" type="text" placeholder="Ej: Juan Perez"
+                    value={apertura.distribuidor} onChange={e=>setApertura(p=>({...p,distribuidor:e.target.value}))}/>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label">Fecha</label>
+                  <input className="field-input" type="date" value={apertura.fecha}
+                    onChange={e=>setApertura(p=>({...p,fecha:e.target.value}))}/>
+                </div>
+              </div>
+            </div>
+            <div className="section-title">Resumen</div>
+            <div className="totals-card">
+              <div className="totals-row"><span className="totals-label">Monto de Apertura</span><span className="totals-value" style={{color:"var(--gold)"}}>Bs. {fmt(montoInicial)}</span></div>
+              <div className="totals-row"><span className="totals-label">Distribuidor</span><span className="totals-value" style={{fontSize:14}}>{apertura.distribuidor||"—"}</span></div>
+
+              <div className="totals-row"><span className="totals-label">Fecha</span><span className="totals-value" style={{fontSize:14}}>{apertura.fecha}</span></div>
+            </div>
+          </div>
+        )}
+
+        {/* EFECTIVO */}
+        {tab===1 && (
+          <div className="section">
+            <div className="section-title">Billetes</div>
+            <div className="denom-grid">
+              {BILLETES.map(b=>{
+                const qty=parseFloat(cantBilletes[b.valor])||0;
+                return(<div className="denom-row" key={b.valor}>
+                  <div className="denom-label"><div className="denom-dot" style={{background:b.color}}/>{b.label}</div>
+                  <input className="qty-input" type="number" min="0" placeholder="0" inputMode="numeric"
+                    value={cantBilletes[b.valor]} onChange={e=>setCantBilletes(p=>({...p,[b.valor]:e.target.value}))}/>
+                  <div className={`denom-subtotal${qty>0?" active":""}`}>Bs. {fmt(qty*b.valor)}</div>
+                </div>);
+              })}
+            </div>
+            <div className="section-title">Monedas</div>
+            <div className="denom-grid">
+              {MONEDAS.map(m=>{
+                const qty=parseFloat(cantMonedas[m.valor])||0;
+                return(<div className="denom-row" key={m.valor}>
+                  <div className="denom-label"><div className="denom-dot" style={{background:m.color}}/>{m.label}</div>
+                  <input className="qty-input" type="number" min="0" placeholder="0" inputMode="numeric"
+                    value={cantMonedas[m.valor]} onChange={e=>setCantMonedas(p=>({...p,[m.valor]:e.target.value}))}/>
+                  <div className={`denom-subtotal${qty>0?" active":""}`}>Bs. {fmt(qty*m.valor)}</div>
+                </div>);
+              })}
+            </div>
+            <div className="section-title">Resumen</div>
+            <div className="totals-card">
+              <div className="totals-row"><span className="totals-label">Total Billetes</span><span className="totals-value">Bs. {fmt(totalBilletes)}</span></div>
+              <div className="totals-row"><span className="totals-label">Total Monedas</span><span className="totals-value">Bs. {fmt(totalMonedas)}</span></div>
+              <div className="totals-row grand"><span className="totals-label" style={{color:"#e8e4dc",fontWeight:500}}>Total Efectivo</span><span className="totals-value grand-val">Bs. {fmt(totalEfectivo)}</span></div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGOS */}
+        {tab===2 && (
+          <div className="section">
+            <div className="section-title">Comprobantes QR / Transferencia</div>
+            {comprobantes.length===0 && <div style={{textAlign:"center",color:"var(--muted)",padding:"34px 0",fontSize:13}}>📲 Sin comprobantes registrados</div>}
+            {comprobantes.map((c,i)=><CompCard key={c.id} comp={c} idx={i} onUpdate={updComp} onDelete={delComp} onFoto={fotoComp}/>)}
+            <button className="btn-add" onClick={addComp}>+ Agregar Comprobante</button>
+            {comprobantes.length>0 && (
+              <div className="totals-card" style={{marginTop:16}}>
+                {comprobantes.map(c=>(
+                  <div className="totals-row" key={c.id}>
+                    <span className="totals-label">{c.tipo} — {c.cliente||"Cliente"}{c.referencia?` (${c.referencia})`:""}</span>
+                    <span className="totals-value" style={{color:"var(--green)"}}>Bs. {fmt(parseFloat(c.monto)||0)}</span>
+                  </div>
+                ))}
+                <div className="totals-row grand"><span className="totals-label" style={{color:"#e8e4dc",fontWeight:500}}>Total Transferencias</span><span className="totals-value grand-val" style={{color:"var(--green)"}}>Bs. {fmt(totalTransf)}</span></div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GASTOS */}
+        {tab===3 && (
+          <div className="section">
+            <div className="section-title">Gastos del Dia</div>
+            {gastos.length===0 && <div style={{textAlign:"center",color:"var(--muted)",padding:"34px 0",fontSize:13}}>🧾 Sin gastos registrados</div>}
+            {gastos.map((g,i)=>(
+              <div className="gasto-card" key={g.id}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,alignItems:"center"}}>
+                  <span style={{fontFamily:"'Barlow Condensed'",fontSize:10,letterSpacing:3,textTransform:"uppercase",color:"var(--muted)"}}>Gasto #{i+1}</span>
+                  <button className="btn-del" onClick={()=>delGasto(g.id)}>Eliminar</button>
+                </div>
+                <div className="gasto-row">
+                  <div className="field-group">
+                    <label className="field-label">Categoria</label>
+                    <select className="field-select" value={g.categoria} onChange={e=>updGasto(g.id,"categoria",e.target.value)}>
+                      {CATEGORIAS_GASTO.map(c=><option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Monto (Bs.)</label>
+                    <input className="field-input" type="number" min="0" step="0.1" placeholder="0.00" inputMode="decimal"
+                      value={g.monto} onChange={e=>updGasto(g.id,"monto",e.target.value)}
+                      style={{fontFamily:"'Barlow Condensed'",fontSize:20,fontWeight:700}}/>
+                  </div>
+                </div>
+                <div className="field-group" style={{marginTop:10}}>
+                  <label className="field-label">Descripcion</label>
+                  <input className="field-input" type="text" placeholder="Ej: Gasolina YPFB Av. America"
+                    value={g.descripcion} onChange={e=>updGasto(g.id,"descripcion",e.target.value)}/>
+                </div>
+              </div>
+            ))}
+            <button className="btn-add" onClick={addGasto}>+ Agregar Gasto</button>
+            {gastos.length>0 && (
+              <div className="totals-card" style={{marginTop:16}}>
+                {gastos.map(g=>(
+                  <div className="totals-row" key={g.id}>
+                    <span className="totals-label">{g.categoria}{g.descripcion?` — ${g.descripcion}`:""}</span>
+                    <span className="totals-value" style={{color:"var(--orange)"}}>Bs. {fmt(parseFloat(g.monto)||0)}</span>
+                  </div>
+                ))}
+                <div className="totals-row grand"><span className="totals-label" style={{color:"#e8e4dc",fontWeight:500}}>Total Gastos</span><span className="totals-value grand-val" style={{color:"var(--orange)"}}>Bs. {fmt(totalGastos)}</span></div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CUADRE */}
+        {tab===4 && (
+          <div className="section">
+            <div className="section-title">Cuadre de Caja</div>
+            <div className="cuadre-apertura-banner">
+              <div>
+                <div className="cuadre-apertura-banner-lbl">Distribuidor</div>
+                <div className="cuadre-apertura-banner-name">{apertura.distribuidor||"—"}</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div className="cuadre-apertura-banner-monto-lbl">Monto de Apertura</div>
+                <div className="cuadre-apertura-banner-monto">Bs. {fmt(montoInicial)}</div>
+              </div>
+            </div>
+            <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Composicion de la rendicion</div>
+            <div className="cuadre-tres">
+              {[
+                {icon:"💵",title:"Efectivo",val:totalEfectivo,color:"var(--blue)"},
+                {icon:"📲",title:"Transf./QR",val:totalTransf,color:"var(--green)"},
+                {icon:"🧾",title:"Gastos",val:totalGastos,color:"var(--orange)"},
+              ].map((col,i)=>(
+                <div className="cuadre-col" key={i}>
+                  <div className="cuadre-col-header">
+                    <div className="cuadre-col-icon">{col.icon}</div>
+                    <div className="cuadre-col-title">{col.title}</div>
+                  </div>
+                  <div className="cuadre-col-body">
+                    <div className="cuadre-col-val" style={{color:col.color}}>Bs. {fmt(col.val)}</div>
+                    <div className="cuadre-col-pct">{pct(col.val).toFixed(1)}%</div>
+                    <div className="cuadre-col-bar-track">
+                      <div className="cuadre-col-bar-fill" style={{width:`${pct(col.val)}%`,background:col.color}}/>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="cuadre-suma-row">
+              <span className="cuadre-suma-label">
+                <span style={{color:"var(--blue)"}}>Efectivo</span> + <span style={{color:"var(--green)"}}>Transf.</span> + <span style={{color:"var(--orange)"}}>Gastos</span>
+              </span>
+              <span className="cuadre-suma-eq">=</span>
+              <span className="cuadre-suma-val" style={{color:Math.abs(diferencia)<0.01?"var(--green)":diferencia>0?"var(--blue)":"var(--red)"}}>
+                Bs. {fmt(totalRendido)}
+              </span>
+            </div>
+            <div className={`cuadre-resultado ${cuadreClass}`}>
+              <div className="cuadre-resultado-top">
+                <div className="cuadre-resultado-lbl">{cuadreLabel}</div>
+                <div className="cuadre-resultado-diferencia">
+                  {diferencia===0?"✓":(diferencia>0?"+":"−")+"Bs. "+fmt(Math.abs(diferencia))}
+                </div>
+                <div className="cuadre-resultado-status">
+                  {diferencia===0?"El distribuidor rindio exactamente el monto asignado":diferencia>0?`Rindio Bs. ${fmt(diferencia)} mas de lo asignado`:`Rindio Bs. ${fmt(Math.abs(diferencia))} menos de lo asignado`}
+                </div>
+              </div>
+            </div>
+            <div className="section-title">Desglose</div>
+            <div className="cuadre-detalle">
+              <div className="cuadre-det-row"><span className="cuadre-det-label"><span>🎯</span> Monto de Apertura</span><span className="cuadre-det-val" style={{color:"var(--gold)"}}>Bs. {fmt(montoInicial)}</span></div>
+              <div className="cuadre-det-row"><span className="cuadre-det-label"><span>💵</span> Efectivo cobrado</span><span className="cuadre-det-val" style={{color:"var(--blue)"}}>Bs. {fmt(totalEfectivo)}</span></div>
+              <div className="cuadre-det-row"><span className="cuadre-det-label"><span>📲</span> Transferencias / QR</span><span className="cuadre-det-val" style={{color:"var(--green)"}}>Bs. {fmt(totalTransf)}</span></div>
+              <div className="cuadre-det-row"><span className="cuadre-det-label"><span>🧾</span> Gastos documentados</span><span className="cuadre-det-val" style={{color:"var(--orange)"}}>Bs. {fmt(totalGastos)}</span></div>
+              <div className="cuadre-det-row" style={{background:"rgba(255,255,255,0.02)"}}><span className="cuadre-det-label"><span>Σ</span> Total rendido</span><span className="cuadre-det-val">Bs. {fmt(totalRendido)}</span></div>
+              <div className="cuadre-det-row" style={{background:diferencia===0?"rgba(46,204,113,0.06)":diferencia>0?"rgba(52,152,219,0.06)":"rgba(231,76,60,0.06)"}}>
+                <span className="cuadre-det-label" style={{color:diferencia===0?"var(--green)":diferencia>0?"var(--blue)":"var(--red)"}}><span>{diferencia===0?"✓":diferencia>0?"↑":"↓"}</span>{diferencia===0?" Cuadre exacto":diferencia>0?" Sobrante":" Faltante"}</span>
+                <span className="cuadre-det-val" style={{fontSize:19,color:diferencia===0?"var(--green)":diferencia>0?"var(--blue)":"var(--red)"}}>{diferencia===0?"Bs. 0.00":`Bs. ${fmt(Math.abs(diferencia))}`}</span>
+              </div>
+            </div>
+            <button className="btn-pdf" onClick={generarPDF} disabled={!jspdfLoaded||generando}>
+              {generando?"⏳ Generando PDF...":jspdfLoaded?"📄 Generar Reporte PDF Completo":"⏳ Cargando..."}
+            </button>
+            <div style={{textAlign:"center",color:"var(--muted)",fontSize:11,marginTop:8}}>
+              Incluye billetes, monedas, comprobantes, imagenes y cuadre final
+            </div>
+
+            <button className={`btn-send${envioOk?" ok":""}`} onClick={enviarArqueo} disabled={enviando||envioOk}>
+              {envioOk ? "✓ Enviado a Google Sheets" : enviando ? "⏳ Enviando..." : "📊 Enviar Arqueo a Google Sheets"}
+            </button>
+            {envioOk && (
+              <div className="send-ok-banner">
+                ✓ Registro guardado correctamente en la hoja de cálculo
+              </div>
+            )}
+            <div style={{textAlign:"center",color:"var(--muted)",fontSize:11,marginTop:8}}>
+              Guarda todos los datos del arqueo en Google Sheets
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="resumen-bar">
+        <div className="resumen-item"><span className="resumen-lbl">Apertura</span><span className="resumen-val neutral">Bs. {fmt(montoInicial)}</span></div>
+        <div className="resumen-item"><span className="resumen-lbl">Efectivo</span><span className="resumen-val blue">Bs. {fmt(totalEfectivo)}</span></div>
+        <div className="resumen-item"><span className="resumen-lbl">Transf.+Gas.</span><span className="resumen-val positive">Bs. {fmt(totalTransf+totalGastos)}</span></div>
+        <div className="resumen-item">
+          <span className="resumen-lbl">{diferencia===0?"Exacto":diferencia>0?"Sobrante":"Faltante"}</span>
+          <span className={`resumen-val${diferencia===0?" positive":diferencia>0?" blue":" negative"}`}>Bs. {fmt(Math.abs(diferencia))}</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CompCard({comp,idx,onUpdate,onDelete,onFoto}){
+  const fileRef=React.useRef(null);
+  return(
+    <div className="comp-card">
+      <div className="comp-card-header">
+        <span className="comp-badge">Comprobante #{idx+1}</span>
+        <button className="btn-del" onClick={()=>onDelete(comp.id)}>Eliminar</button>
+      </div>
+      <div className="comp-fields">
+        <div className="field-group"><label className="field-label">Tipo de pago</label>
+          <select className="field-select" value={comp.tipo} onChange={e=>onUpdate(comp.id,"tipo",e.target.value)}>
+            <option>QR</option><option>Transferencia</option><option>Deposito</option>
+          </select>
+        </div>
+        <div className="field-group"><label className="field-label">Monto (Bs.)</label>
+          <input className="field-input" type="number" min="0" step="0.01" placeholder="0.00" inputMode="decimal"
+            value={comp.monto} onChange={e=>onUpdate(comp.id,"monto",e.target.value)}
+            style={{fontFamily:"'Barlow Condensed'",fontSize:20,fontWeight:700}}/>
+        </div>
+        <div className="field-group"><label className="field-label">Cliente / Ruta</label>
+          <input className="field-input" type="text" placeholder="Nombre del cliente"
+            value={comp.cliente} onChange={e=>onUpdate(comp.id,"cliente",e.target.value)}/>
+        </div>
+        <div className="field-group"><label className="field-label">N° Referencia</label>
+          <input className="field-input" type="text" placeholder="TRX-XXXXX"
+            value={comp.referencia} onChange={e=>onUpdate(comp.id,"referencia",e.target.value)}/>
+        </div>
+      </div>
+      <div className="field-label" style={{marginBottom:6}}>Fotografia del comprobante</div>
+      <div className={`photo-zone${comp.foto?" has-photo":""}`} onClick={()=>fileRef.current?.click()}>
+        {comp.foto?(<><img src={comp.foto} alt="Comprobante"/><div style={{marginTop:5,fontSize:11,color:"var(--muted)"}}>Toca para cambiar la foto</div></>):
+        (<div className="photo-zone-placeholder"><span>📷</span>Toca para adjuntar foto del comprobante</div>)}
+        <input ref={fileRef} type="file" accept="image/*" capture="environment"
+          className="photo-input" onChange={e=>onFoto(comp.id,e.target.files[0])}/>
+      </div>
+    </div>
+  );
+}
+
+// Mount
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<Arqueo />);
+</script>
+
+<script>
+// ── Service Worker ──────────────────────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      console.log("SW registrado:", reg.scope);
+
+      // Detectar nueva version
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            document.getElementById("update-banner").classList.add("show");
+          }
+        });
+      });
+    } catch (e) {
+      console.warn("SW no pudo registrarse:", e);
+    }
+  });
+
+  // Recargar al activar nuevo SW
+  navigator.serviceWorker.addEventListener("controllerchange", () => location.reload());
+}
+
+document.getElementById("update-btn").addEventListener("click", () => {
+  navigator.serviceWorker.ready.then(reg => {
+    if (reg.waiting) reg.waiting.postMessage("skipWaiting");
+  });
+});
+
+// ── Banner instalacion ───────────────────────────────────────────────────────
+let deferredPrompt = null;
+const banner       = document.getElementById("install-banner");
+const installBtn   = document.getElementById("install-btn");
+const dismissBtn   = document.getElementById("install-dismiss");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setTimeout(() => banner.classList.add("show"), 3000);
+});
+
+installBtn.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log("Instalacion:", outcome);
+  deferredPrompt = null;
+  banner.classList.remove("show");
+});
+
+dismissBtn.addEventListener("click", () => banner.classList.remove("show"));
+
+window.addEventListener("appinstalled", () => {
+  banner.classList.remove("show");
+  console.log("App instalada correctamente.");
+});
+
+// ── Ocultar splash ───────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    const splash = document.getElementById("splash");
+    splash.classList.add("hidden");
+    setTimeout(() => splash.remove(), 500);
+  }, 1200);
+});
+</script>
+</body>
+</html>
